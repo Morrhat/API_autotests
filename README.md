@@ -21,10 +21,11 @@
 
 ## Организация коллекции Postman
 - Коллекция разбита по микросевисам: Register; Mail; Auth; Account; Users; Forum.
-- Каждый сервис включает в себя позитивные и негативные проверки API.
+- Каждый раздел-сервис включает в себя позитивные и негативные проверки API.
 - Негативные проверки разбиты по статус-кодам ответов сервера - 400, 401, 403 и т.д.
 ---
 ```sh
+- Positive tests
 - Negative tests
   - 400
   - 404
@@ -35,11 +36,81 @@
 
 ## Содержание скриптов
 
-Для коллекции Postman создано отдельное окружение(Environment) с заданными переменными. Парсинг тела ответа для извлечения данных ответа от сервера в формате JSON и преобразования их в объект JavaScript.
-Значения для переменных извлекаются
-в которое отправляются
+Для коллекции Postman создано отдельное окружение(Environment) с объявлянными переменными. Значение переменных задаётся через парсинг тела ответа для извлечения данных из ответа от сервера в формате JSON и преобразования их в объект JavaScript.
+
+---
+```javascript
+// Получение Auth токена в переменную окружения
+console.log(pm.response.json())
+
+var token = pm.response.json().metadata.token 
+console.log(token)
+
+pm.environment.set("env_token", token);
 
 
+// Сравнение значения из тела ответа от сервера со значением из тела запроса
+pm.test("Test", function () {
+    // Получаем тело запроса
+  var requestBody = pm.request.body.raw;
+    // Парсим его в объект
+    var parsedRequestBody = JSON.parse(requestBody);    
+    // Получаем тело ответа
+  var responseBody = pm.response.json();
+// Сравниваем значение resource.login из запроса и ответа c login из тела запроса
+  pm.expect(responseBody.resource.login).to.eql(parsedRequestBody.login);
 
+  // Логируем значение из тела запроса
+    console.log(parsedRequestBody.login);
+   // Логируем значение из тела ответа от сервера
+    console.log(responseBody.resource.login );
+});
+```
+
+```javascript
+// Получаем тело ответа в формате JSON
+let responseBody = pm.response.json();
+
+// Указываем нужный email, для которого ищем письмо
+let targetEmail = "astarion@baldura12.info";
+
+// Объявляем переменную для ID письма
+let message_id = null;
+
+// Перебираем все письма в массиве items
+responseBody.items.forEach(item => {
+
+    item.To.forEach(recipient => {     // Перебор получателей каждого письма
+        let email = recipient.Mailbox + "@" + recipient.Domain;    // Получаем полный email из ключей Mailbox и Domain
+        if (email === targetEmail) {  // Если искомый email совпадает с нужным, сохраняем ID письма в message_id
+            message_id = item.ID;
+        }
+    });
+});
+
+// С помощью консоли, проверяем, найдено ли письмо
+if (message_id) {  
+    pm.environment.set("message_id", message_id);  // Сохраняем message_id письма в переменную окружения 
+    console.log("Письмо найдено. ID:", message_id);
+} else {
+    console.log("Письмо для " + targetEmail + " не найдено.");     // Выводим сообщение в консоль, если письмо не найдено
+}
+```
+
+
+---
 
 ## Работа с базой данных. Создание SQL-запросов для проверки данных
+
+---
+```sql
+-- user registration
+SELECT * FROM public."Users" u WHERE u."Login" = 'Astarion+04';
+
+
+-- activation check
+SELECT u."Activated" from public."Users" u WHERE u."UserId" = '605c0511-cc79-4fb2-96ff-8254b23aeabd';
+
+
+SELECT u."Activated" from public."Users" u WHERE u."UserId" = '605c0511-cc79-4fb2-96ff-8254b23aeabd';
+```
