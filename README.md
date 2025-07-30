@@ -39,8 +39,10 @@
 Для коллекции Postman создано отдельное окружение(Environment) с объявлянными переменными. Значение переменных задаётся через парсинг тела ответа для извлечения данных из ответа от сервера в формате JSON и преобразования их в объект JavaScript.
 
 ---
+
+#### Получение Auth токена в переменную окружения из тела ответа от сервера
 ```javascript
-// Получение Auth токена в переменную окружения
+// Получение Auth токена
 console.log(pm.response.json())
 
 var token = pm.response.json().metadata.token 
@@ -67,6 +69,7 @@ pm.test("Test", function () {
 });
 ```
 
+#### Получение конкретного сообщения message_id. Scripts, который берет "ID" из ответа от сервера и записывает в переменные окружения.
 ```javascript
 // Получаем тело ответа в формате JSON
 let responseBody = pm.response.json();
@@ -111,6 +114,30 @@ SELECT * FROM public."Users" u WHERE u."Login" = 'Astarion+04';
 -- activation check
 SELECT u."Activated" from public."Users" u WHERE u."UserId" = '605c0511-cc79-4fb2-96ff-8254b23aeabd';
 
-
-SELECT u."Activated" from public."Users" u WHERE u."UserId" = '605c0511-cc79-4fb2-96ff-8254b23aeabd';
+-- user check
+select us."Login", us."Email", f."ForumTopicId", f."UserId", f."CreateDate"
+from public."Users" us
+inner join public."ForumTopics" f on us."UserId" = f."UserId"
+where us."Login" = 'Astarion+06'
 ```
+
+---
+### Описание конфигурации файлов
+
+---
+
+`API task.postman_collection` - коллекция Postman, разбитая по микросевисам.
+Для сервисов Mail API, Authorization API, Forum API (Post new topic, Post new comment) прописаны скрипты на объявление переменных.
+
+Environment окружения содержит переменные:
+- message_id — идентификатор письма, отправленного на почту пользователю;
+- env_token — токен авторизации, передаётся в Authorization - Inherit auth from parent - API Key для главной страницы и в Headers - X-Dm-Auth-Token для форума;
+- base_url — URL главной страницы;
+- forum_url — URL форума;
+- confirmationUUID — UUID (universally unique IDentifier) токен, полученного в письме для подтверждения регистрации;
+- topic_id — идентификатор топика форума;
+- comment_id - идентификатор комментария к топику;
+
+---
+---
+                                                      01.2025
